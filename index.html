@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>OmniLedger Pro 超級記帳王｜iPhone 與桌機雙棲旗艦版</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="iphone-sim-mode">
+  <!-- Floating Device Mode Switcher (右上角隨時切換 iPhone 實機模擬 / 電腦全寬模式) -->
+  <div class="device-switcher-bar">
+    <button class="device-switch-btn active" id="btnModeIphone" onclick="App.setDeviceMode('iphone')">📱 iPhone 模擬</button>
+    <button class="device-switch-btn" id="btnModeDesktop" onclick="App.setDeviceMode('desktop')">💻 電腦全寬</button>
+    <button class="device-switch-btn" onclick="App.toggleTheme()">🌗 主題</button>
+  </div>
+
+  <div class="app-shell">
+    <!-- iOS Status Bar + Dynamic Island (Only visible in iPhone Mode) -->
+    <div class="ios-status-bar">
+      <span class="font-mono-num" id="iosClock">09:41</span>
+      <div class="dynamic-island">
+        <div class="island-cam"></div>
+        <span class="island-wave">Ω Pro</span>
+      </div>
+      <span style="font-size: 0.72rem; letter-spacing: 0.03em;">5G 📶 🔋</span>
+    </div>
+
+    <!-- Left Sidebar (Transforms into iOS Frosted Bottom Tab Bar in iPhone mode) -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo">Ω</div>
+        <div>
+          <div style="font-weight: 800; font-size: 1.08rem; letter-spacing: -0.02em;">OmniLedger Pro</div>
+          <div style="font-size: 0.74rem; color: var(--text-secondary);">五大頂尖記帳神軟融合版</div>
+        </div>
+      </div>
+
+      <div class="sidebar-fusion-badges">
+        <div style="font-weight: 600; color: var(--text-secondary); margin-bottom: 0.3rem; font-size: 0.72rem;">✨ 五大高評價核心引擎：</div>
+        <div>
+          <span class="fusion-pill">🎨 MOZE 專案/多幣</span>
+          <span class="fusion-pill">🏦 麻布 多帳戶淨值</span>
+          <span class="fusion-pill">✉️ YNAB 信封預算</span>
+          <span class="fusion-pill">🏙️ 記帳城市 養成</span>
+          <span class="fusion-pill">🧾 CWMoney/簡單 發票快記</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu" id="sidebarNav">
+        <button class="nav-item active" data-tab="dashboard">
+          <span>📊</span>
+          <span>總覽</span>
+          <span class="nav-badge">核心</span>
+        </button>
+        <button class="nav-item" data-tab="ledger">
+          <span>📅</span>
+          <span>明細日曆</span>
+          <span class="nav-badge" id="navTxCount">0</span>
+        </button>
+        <button class="nav-item" data-tab="accounts">
+          <span>🏦</span>
+          <span>帳戶資產</span>
+          <span class="nav-badge">麻布</span>
+        </button>
+        <button class="nav-item" data-tab="budgets">
+          <span>✉️</span>
+          <span>信封預算</span>
+          <span class="nav-badge">YNAB</span>
+        </button>
+        <button class="nav-item" data-tab="projects">
+          <span>✈️</span>
+          <span>專案訂閱</span>
+          <span class="nav-badge">MOZE</span>
+        </button>
+        <button class="nav-item" data-tab="invoices">
+          <span>🧾</span>
+          <span>雲端發票</span>
+          <span class="nav-badge">CW</span>
+        </button>
+        <button class="nav-item" data-tab="city">
+          <span>🏙️</span>
+          <span>記帳城市</span>
+          <span class="nav-badge" id="navCityLv">Lv.1</span>
+        </button>
+        <button class="nav-item" data-tab="settings">
+          <span>⚙️</span>
+          <span>設定備份</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer" style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.6rem;">
+          <span>🔥 連續記帳天數</span>
+          <strong class="font-mono-num" style="color: #f59e0b;" id="sidebarStreak">7 天</strong>
+        </div>
+        <div style="display: flex; gap: 0.45rem;">
+          <button class="btn btn-secondary btn-sm" style="flex: 1;" id="themeToggleBtn">
+            🌗 切換主題
+          </button>
+          <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="App.exportCSV()">
+            📥 匯出 CSV
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-area">
+      <!-- Top Bar -->
+      <header class="topbar">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+          <div>
+            <h1 id="pageTitle" style="font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em;">📊 全方位財務總覽</h1>
+            <p id="pageSubtitle" style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.05rem;">多帳戶淨值整合、視覺圖表與零基預算追蹤</p>
+          </div>
+          <!-- Month Switcher Pill -->
+          <div style="display: flex; align-items: center; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 99px; padding: 0.15rem 0.35rem; flex-shrink: 0;">
+            <button class="btn btn-ghost btn-sm" style="padding: 0.2rem 0.4rem;" onclick="App.changeMonth(-1)">◀</button>
+            <span id="currentMonthLabel" class="font-mono-num" style="font-weight: 700; font-size: 0.8rem; padding: 0 0.3rem;">2026/11</span>
+            <button class="btn btn-ghost btn-sm" style="padding: 0.2rem 0.4rem;" onclick="App.changeMonth(1)">▶</button>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+          <button class="btn btn-outline-danger btn-sm" style="flex: 1;" onclick="App.startBrandNewBlankLedger()">
+            📄 全新空白帳本
+          </button>
+          <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="App.loadSevenDayTripScenario()">
+            🧳 出國七日範例
+          </button>
+          <button class="btn btn-primary btn-sm" style="flex: 1.2;" onclick="App.openTxModal('expense', true)">
+            ➕ 新增空白記帳
+          </button>
+        </div>
+      </header>
+
+      <!-- iOS Segmented Control for Quick Entry Mode -->
+      <div class="ios-segmented">
+        <button type="button" class="ios-seg-btn active" id="segBtnBlank" onclick="App.switchEntryMode('blank')">📝 空白欄位直填</button>
+        <button type="button" class="ios-seg-btn" id="segBtnSmart" onclick="App.switchEntryMode('smart')">⚡ AI 一句話快記</button>
+      </div>
+
+      <!-- Mode A: Direct Blank Row Creator (全新空白紀錄直填列) -->
+      <section class="blank-entry-bar" id="inlineBlankBar">
+        <input type="date" id="inlineDate" class="form-control" />
+
+        <select id="inlineType" class="form-control" onchange="App.syncInlineCategories()">
+          <option value="expense">🔻 支出</option>
+          <option value="income">🔺 收入</option>
+        </select>
+
+        <div style="display: flex; gap: 0.25rem;">
+          <select id="inlineCategory" class="form-control" onchange="App.handleInlineCatChange()"></select>
+          <input type="text" id="inlineCustomCat" class="form-control" placeholder="自訂分類" style="display: none; min-width: 80px;" />
+        </div>
+
+        <select id="inlineAccount" class="form-control"></select>
+
+        <input type="text" id="inlineAmount" class="form-control font-mono-num" placeholder="金額 / 算式" />
+
+        <select id="inlineCurrency" class="form-control">
+          <option value="TWD">🇹🇼 TWD</option>
+          <option value="JPY">🇯🇵 JPY</option>
+          <option value="THB">🇹🇭 THB</option>
+          <option value="USD">🇺🇸 USD</option>
+          <option value="EUR">🇪🇺 EUR</option>
+          <option value="HKD">🇭🇰 HKD</option>
+        </select>
+
+        <select id="inlineProject" class="form-control">
+          <option value="">一般日常 (無專案)</option>
+        </select>
+
+        <input type="text" id="inlineNote" class="form-control" placeholder="空白備註 / 品項名稱 / #標籤" />
+
+        <div class="blank-submit-group" style="display: flex; gap: 0.35rem;">
+          <button type="button" class="btn btn-primary" style="flex: 1;" onclick="App.submitInlineBlankRow()">＋ 新增這筆空白紀錄</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="App.clearInlineBlankBar()">🧹 清空</button>
+        </div>
+      </section>
+
+      <!-- Mode B: AI 3s Smart Input -->
+      <section class="smart-bar-wrapper" id="smartBarSection" style="margin-bottom: 0.85rem; display: none;">
+        <div style="display: flex; align-items: center; gap: 0.4rem; font-weight: 700; font-size: 0.82rem; color: #818cf8;">
+          <span>⚡ 智慧快記：</span>
+        </div>
+        <input
+          type="text"
+          id="smartInput"
+          class="smart-bar-input"
+          placeholder="如：手標泰奶 55 THB 現金  或  一蘭拉麵 1280 JPY @日本"
+          autocomplete="off"
+        />
+        <div id="smartPreview" style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.74rem; flex-wrap: wrap;"></div>
+        <button class="btn btn-primary btn-sm" style="width: 100%;" onclick="App.submitSmartInput()">⚡ 秒速入帳</button>
+      </section>
+
+      <!-- ================= TAB 1: DASHBOARD ================= -->
+      <section id="tab-dashboard" class="tab-section active">
+        <div class="kpi-grid">
+          <div class="card kpi-card">
+            <div class="kpi-label">
+              <span>🏛️ 總淨資產</span>
+              <span class="tag">麻布</span>
+            </div>
+            <div class="kpi-value font-mono-num" id="kpiNetWorth">$0</div>
+            <div class="kpi-sub" id="kpiNetWorthSub">資產 $0｜負債 $0</div>
+          </div>
+
+          <div class="card kpi-card">
+            <div class="kpi-label">
+              <span>💸 本月支出</span>
+              <span class="badge-expense" id="kpiExpenseRatio">0%</span>
+            </div>
+            <div class="kpi-value font-mono-num" style="color: var(--color-expense);" id="kpiMonthExpense">$0</div>
+            <div class="kpi-sub" id="kpiMonthIncomeSub">收入：<strong class="font-mono-num" style="color: var(--color-income);">$0</strong></div>
+          </div>
+
+          <div class="card kpi-card">
+            <div class="kpi-label">
+              <span>🛡️ 今日可花</span>
+              <span class="tag">YNAB</span>
+            </div>
+            <div class="kpi-value font-mono-num" style="color: #38bdf8;" id="kpiSafeDaily">$0</div>
+            <div class="kpi-sub" id="kpiSafeDailySub">日常剩餘日均額度</div>
+          </div>
+
+          <div class="card kpi-card">
+            <div class="kpi-label">
+              <span>💰 本月結餘</span>
+              <span class="badge-income" id="kpiSavingsRate">0%</span>
+            </div>
+            <div class="kpi-value font-mono-num" id="kpiMonthBalance">$0</div>
+            <div class="kpi-sub" id="kpiCityMiniStatus">淨現金流與外幣總計</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.7rem;">
+              <h3 style="font-size: 0.96rem; font-weight: 700;">📈 本月每日收支趨勢與累積曲線</h3>
+              <span class="tag">MOZE</span>
+            </div>
+            <div id="trendChartContainer" style="width: 100%; height: 195px;"></div>
+          </div>
+
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.7rem;">
+              <h3 style="font-size: 0.96rem; font-weight: 700;">🍩 本月支出分類結構分析</h3>
+              <span class="tag">結構</span>
+            </div>
+            <div id="categoryChartContainer" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;"></div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1rem;">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+              <h3 style="font-size: 0.96rem; font-weight: 700;">🕒 最新收支流水帳</h3>
+              <div style="display: flex; gap: 0.35rem;">
+                <button class="btn btn-primary btn-sm" onclick="App.openTxModal('expense', true)">＋ 新增</button>
+                <button class="btn btn-ghost btn-sm" onclick="App.switchTab('ledger')">全部 ➔</button>
+              </div>
+            </div>
+            <div id="dashboardRecentTx"></div>
+          </div>
+
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+              <h3 style="font-size: 0.96rem; font-weight: 700;">✉️ YNAB 信封預算即時水位</h3>
+              <button class="btn btn-ghost btn-sm" onclick="App.switchTab('budgets')">調配 ➔</button>
+            </div>
+            <div id="dashboardBudgetOverview"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 2: LEDGER & CALENDAR HEATMAP ================= -->
+      <section id="tab-ledger" class="tab-section">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.7rem;">
+              <h3 style="font-size: 0.96rem; font-weight: 700;">🗓️ 互動式收支日曆熱力圖</h3>
+              <button class="btn btn-secondary btn-sm" id="clearDateFilterBtn" style="display: none;" onclick="App.selectCalendarDate(null)">🔄 顯示整月</button>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.35rem;">
+              <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+            </div>
+            <div id="calendarHeatmapGrid" class="calendar-grid"></div>
+          </div>
+
+          <div class="card" style="display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.65rem;">
+              <h3 style="font-size: 0.96rem; font-weight: 700;">🔍 帳務明細檢索與管理</h3>
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <span id="filteredSummaryBadge" class="font-mono-num" style="font-size: 0.74rem; color: var(--text-secondary);">共 0 筆</span>
+                <button class="btn btn-primary btn-sm" onclick="App.openTxModal('expense', true)">＋ 新增</button>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.45rem; margin-bottom: 0.85rem;">
+              <input type="text" id="filterKeyword" class="form-control" style="grid-column: 1 / -1;" placeholder="搜尋備註、#標籤、發票、幣別..." oninput="App.renderLedger()" />
+              <select id="filterType" class="form-control" onchange="App.renderLedger()">
+                <option value="all">所有類型</option>
+                <option value="expense">🔻 僅看支出</option>
+                <option value="income">🔺 僅看收入</option>
+                <option value="transfer">🔄 僅看轉帳</option>
+              </select>
+              <select id="filterCategory" class="form-control" onchange="App.renderLedger()">
+                <option value="all">所有分類</option>
+              </select>
+              <select id="filterAccount" class="form-control" onchange="App.renderLedger()">
+                <option value="all">所有帳戶</option>
+              </select>
+              <select id="filterProject" class="form-control" onchange="App.renderLedger()">
+                <option value="all">所有專案</option>
+              </select>
+            </div>
+
+            <div id="ledgerListContainer" style="max-height: 460px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md);"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 3: ACCOUNTS & NET WORTH ================= -->
+      <section id="tab-accounts" class="tab-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.9rem;">
+          <h3 style="font-size: 1rem; font-weight: 700;">🏦 全資產與負債帳戶中樞</h3>
+          <div style="display: flex; gap: 0.4rem;">
+            <button class="btn btn-secondary btn-sm" onclick="App.openTransferModal()">🔄 轉帳/繳卡費</button>
+            <button class="btn btn-primary btn-sm" onclick="App.openAccountModal()">＋ 新增帳戶</button>
+          </div>
+        </div>
+
+        <div id="accountsOverviewBar" class="card" style="margin-bottom: 0.9rem;"></div>
+        <div id="accountsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.85rem;"></div>
+      </section>
+
+      <!-- ================= TAB 4: YNAB ENVELOPE BUDGETS & GOALS ================= -->
+      <section id="tab-budgets" class="tab-section">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1rem;">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.4rem;">
+              <h3 style="font-size: 0.98rem; font-weight: 700;">✉️ YNAB 零基信封預算池</h3>
+              <div style="display: flex; align-items: center; gap: 0.45rem;">
+                <label style="font-size: 0.74rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.25rem; cursor: pointer;">
+                  <input type="checkbox" id="excludeProjectFromBudgetChk" onchange="App.toggleExcludeProjectBudget(this.checked)" />
+                  <span>排除出國專案</span>
+                </label>
+                <button class="btn btn-secondary btn-sm" onclick="App.autoBalanceBudgets()">✨ 智慧配置</button>
+              </div>
+            </div>
+            <div id="ynabTotalPoolBanner" style="margin-bottom: 0.85rem;"></div>
+            <div id="ynabEnvelopesList"></div>
+          </div>
+
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <h3 style="font-size: 0.98rem; font-weight: 700;">🎯 夢想儲蓄目標池</h3>
+              <button class="btn btn-primary btn-sm" onclick="App.openGoalModal()">＋ 新增目標</button>
+            </div>
+            <div id="savingsGoalsList" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 5: PROJECTS & SUBSCRIPTIONS ================= -->
+      <section id="tab-projects" class="tab-section">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1rem;">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.4rem;">
+              <h3 style="font-size: 0.98rem; font-weight: 700;">✈️ 專案/旅遊獨立記帳本</h3>
+              <div style="display: flex; gap: 0.35rem;">
+                <button class="btn btn-secondary btn-sm" onclick="App.loadSevenDayTripScenario()">🧳 七日遊範例</button>
+                <button class="btn btn-primary btn-sm" onclick="App.openProjectModal()">＋ 新增專案</button>
+              </div>
+            </div>
+            <div id="projectsListContainer" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+          </div>
+
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <h3 style="font-size: 0.98rem; font-weight: 700;">🔁 週期訂閱與固定扣款</h3>
+              <button class="btn btn-primary btn-sm" onclick="App.openSubModal()">＋ 新增訂閱</button>
+            </div>
+            <div id="subSummaryBanner" style="margin-bottom: 0.85rem;"></div>
+            <div id="subscriptionsListContainer" style="display: flex; flex-direction: column; gap: 0.65rem;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 6: TAIWAN CLOUD INVOICES ================= -->
+      <section id="tab-invoices" class="tab-section">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1rem;">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <h3 style="font-size: 0.98rem; font-weight: 700;">🧾 雲端發票載具 & 自動對獎</h3>
+              <button class="btn btn-primary btn-sm" onclick="App.simulateCloudInvoiceSync()">📲 載具同步</button>
+            </div>
+
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.85rem; margin-bottom: 0.85rem;">
+              <div style="font-weight: 700; font-size: 0.86rem; margin-bottom: 0.55rem; color: #f59e0b;">🏆 統一發票一鍵對獎中心</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.65rem;">
+                <div>
+                  <label class="form-label">特別獎 (1000萬)</label>
+                  <input type="text" id="prizeSpecial" class="form-control font-mono-num" value="38014925" maxlength="8" />
+                </div>
+                <div>
+                  <label class="form-label">特獎 (200萬)</label>
+                  <input type="text" id="prizeGrand" class="form-control font-mono-num" value="71926584" maxlength="8" />
+                </div>
+                <div style="grid-column: span 2;">
+                  <label class="form-label">頭獎 3 組 (8碼)</label>
+                  <input type="text" id="prizeFirst" class="form-control font-mono-num" value="10482519, 59283741, 88412630" />
+                </div>
+              </div>
+              <button class="btn btn-primary" style="width: 100%;" onclick="App.checkInvoicePrizes()">🎯 立即比對帳本內所有發票</button>
+              <div id="invoicePrizeResult" style="margin-top: 0.75rem;"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <h3 style="font-size: 0.98rem; font-weight: 700;">📑 已登錄發票清冊</h3>
+              <span id="invoiceCountBadge" class="tag">0 張發票</span>
+            </div>
+            <div id="invoiceListContainer" style="max-height: 420px; overflow-y: auto;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 7: FORTUNE CITY GAMIFICATION ================= -->
+      <section id="tab-city" class="tab-section">
+        <div class="city-stage" style="margin-bottom: 1rem; padding: 1.1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+              <div style="display: inline-flex; align-items: center; gap: 0.35rem; background: rgba(99, 102, 241, 0.25); padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.72rem; font-weight: 700; color: #c7d2fe; margin-bottom: 0.3rem;">
+                <span>🏙️ 記帳城市養成引擎</span>
+              </div>
+              <h2 style="font-size: 1.25rem; font-weight: 800; color: #fff;" id="cityTitleBanner">金融大都會 Lv.1</h2>
+            </div>
+            <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 0.65rem 0.9rem; width: 100%; color: #fff;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.76rem; margin-bottom: 0.3rem;">
+                <span>🎖️ 市長經驗值 (EXP)</span>
+                <span class="font-mono-num" id="cityExpText">0 / 100</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" id="cityExpBar" style="width: 50%; background: var(--accent-gradient);"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.72rem; margin-top: 0.4rem; color: #cbd5e1;">
+                <span id="cityPopulationText">👥 市民人口：0 人</span>
+                <span id="cityHappinessText">😊 幸福度：98%</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="cityBuildingsGrid" class="city-grid"></div>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size: 0.98rem; font-weight: 700; margin-bottom: 0.75rem;">🏅 市民理財任務與成就徽章圖鑑</h3>
+          <div id="cityAchievementsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.75rem;"></div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 8: SETTINGS, FX RATES & BACKUP ================= -->
+      <section id="tab-settings" class="tab-section">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1rem;">
+          <div class="card">
+            <h3 style="font-size: 0.98rem; font-weight: 700; margin-bottom: 0.75rem;">💾 帳本模式切換與備份中心</h3>
+            <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+              <button class="btn btn-outline-danger" onclick="App.startBrandNewBlankLedger()">📄 一鍵開啟「完全空白新帳本」</button>
+              <button class="btn btn-secondary" onclick="App.loadSevenDayTripScenario()">🧳 載入「日本東京京都出國七天自由行」帳本</button>
+              <button class="btn btn-secondary" onclick="App.resetToDemoData()">🔄 載入一般日常預設範例資料</button>
+              <button class="btn btn-secondary" onclick="App.clearAllTransactions()">🗑️ 僅清空交易紀錄 (保留帳戶與預算)</button>
+              <hr style="border: none; border-top: 1px solid var(--border-color); margin: 0.25rem 0;" />
+              <button class="btn btn-primary" onclick="App.exportJSON()">📦 匯出完整帳本備份 (.json)</button>
+              <button class="btn btn-secondary" onclick="App.exportCSV()">📊 匯出 Excel 相容收支報表 (.csv)</button>
+              <label class="btn btn-secondary" style="cursor: pointer;">
+                📂 匯入 JSON 備份檔還原
+                <input type="file" accept=".json" style="display: none;" onchange="App.importJSON(event)" />
+              </label>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="font-size: 0.98rem; font-weight: 700; margin-bottom: 0.75rem;">💱 多幣別即時匯率設定 (含日圓/泰銖/美金)</h3>
+            <div id="fxRatesConfigList" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 0.9rem;"></div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="App.saveCustomFxRates()">💾 儲存自訂匯率設定</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- iOS Floating '+' Quick Record Button -->
+    <button class="ios-fab" onclick="App.openTxModal('expense', true)" title="新增空白記帳">＋</button>
+
+    <!-- iOS Home Indicator Bar -->
+    <div class="ios-home-indicator"></div>
+
+    <!-- ================= MODAL: ADD / EDIT BLANK TRANSACTION (iOS Bottom Sheet) ================= -->
+    <div class="modal-backdrop" id="txModal">
+      <div class="modal-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h3 id="txModalTitle" style="font-size: 1.08rem; font-weight: 800;">➕ 新增全新空白收支紀錄</h3>
+          <div style="display: flex; gap: 0.35rem;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="App.resetTxFormBlank()">🧹 清空</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="App.closeModal('txModal')">✕</button>
+          </div>
+        </div>
+
+        <form id="txForm" onsubmit="App.saveTransaction(event)">
+          <input type="hidden" id="txId" />
+
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; margin-bottom: 0.85rem;">
+            <button type="button" class="btn btn-secondary btn-sm" id="typeBtnExpense" onclick="App.setTxFormType('expense')">🔻 支出</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="typeBtnIncome" onclick="App.setTxFormType('income')">🔺 收入</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="typeBtnTransfer" onclick="App.setTxFormType('transfer')">🔄 轉帳/繳卡</button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 0.55rem;">
+            <div class="form-group">
+              <label class="form-label">金額 / 算式 (如 1200+850*2)</label>
+              <input type="text" id="txAmount" class="form-control font-mono-num" style="font-size: 1.15rem; font-weight: 700;" placeholder="0" required oninput="App.previewCalcAmount()" />
+              <div id="txCalcPreview" style="font-size: 0.72rem; color: #818cf8; margin-top: 0.15rem;"></div>
+              <div class="fx-quick-pills">
+                <button type="button" class="fx-pill-btn" onclick="App.applyQuickModifier('*1.015')">💳+1.5%手續費</button>
+                <button type="button" class="fx-pill-btn" onclick="App.applyQuickModifier('*0.9')">🛍️-10%退稅</button>
+                <button type="button" class="fx-pill-btn" onclick="App.applyQuickModifier('/2')">👥÷2平分</button>
+                <button type="button" class="fx-pill-btn" onclick="App.applyQuickModifier('/4')">👥÷4分帳</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">幣別 (折算TWD)</label>
+              <select id="txCurrency" class="form-control" onchange="App.previewCalcAmount()">
+                <option value="TWD">🇹🇼 TWD 台幣</option>
+                <option value="JPY">🇯🇵 JPY 日圓</option>
+                <option value="THB">🇹🇭 THB 泰銖</option>
+                <option value="USD">🇺🇸 USD 美金</option>
+                <option value="EUR">🇪🇺 EUR 歐元</option>
+                <option value="HKD">🇭🇰 HKD 港幣</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 0.75rem;">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('calcPadBox').style.display = document.getElementById('calcPadBox').style.display === 'none' ? 'grid' : 'none'">
+              🧮 展開螢幕小算盤
+            </button>
+            <div id="calcPadBox" class="calc-pad" style="display: none;">
+              <button type="button" class="calc-btn" onclick="App.appendCalc('7')">7</button>
+              <button type="button" class="calc-btn" onclick="App.appendCalc('8')">8</button>
+              <button type="button" class="calc-btn" onclick="App.appendCalc('9')">9</button>
+              <button type="button" class="calc-btn" onclick="App.appendCalc('+')">+</button>
+              <button type="button" class="calc-btn" onclick="App.appendCalc('4')">4</button>
+              <button type="button" class="calc-btn" onclick="App.appendCalc('5')">5</button>
+              <button type="button" class="calc-btn" onclick="App.appendCalc('6')">6</button>
+              <button type="button" class="calc-btn" onclick="App.appendCalc('-')">-</button>
+              <button type="button" class="calc-btn" onclick="App.appendCalc('1')">1</button>
+              <button type="button" class="calc-btn" onclick="App.appendCalc('2')">2</button>
+              <button type="button" class="calc-btn" onclick="App.appendCalc('3')">3</button>
+              <button type="button" class="calc-btn" onclick="App.appendCalc('*')">×</button>
+              <button type="button" class="calc-btn" onclick="App.appendCalc('0')">0</button>
+              <button type="button" class="calc-btn" onclick="App.appendCalc('00')">00</button>
+              <button type="button" class="calc-btn" onclick="App.appendCalc('C')">清除</button>
+              <button type="button" class="calc-btn" onclick="App.evalCalcBox()">＝</button>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem;">
+            <div class="form-group" id="txCategoryGroup">
+              <label class="form-label">收支分類</label>
+              <select id="txCategory" class="form-control" onchange="App.handleModalCatChange()"></select>
+              <input type="text" id="txCustomCategory" class="form-control" style="display: none; margin-top: 0.35rem;" placeholder="自訂新分類名稱" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" id="txAccountLabel">扣款/入帳帳戶</label>
+              <select id="txAccount" class="form-control" onchange="App.handleModalAccChange()"></select>
+              <input type="text" id="txCustomAccount" class="form-control" style="display: none; margin-top: 0.35rem;" placeholder="自訂新帳戶名稱" />
+            </div>
+            <div class="form-group" id="txToAccountGroup" style="display: none;">
+              <label class="form-label">轉入目標帳戶</label>
+              <select id="txToAccount" class="form-control"></select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem;">
+            <div class="form-group">
+              <label class="form-label">日期</label>
+              <input type="date" id="txDate" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">歸屬專案</label>
+              <select id="txProject" class="form-control">
+                <option value="">無特定專案 (一般日常)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 0.55rem;">
+            <div class="form-group">
+              <label class="form-label">品項備註 / #標籤</label>
+              <input type="text" id="txNote" class="form-control" placeholder="如：曼谷泰式按摩 #旅遊" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">發票號碼 (選填)</label>
+              <input type="text" id="txInvoice" class="form-control font-mono-num" placeholder="AB-12345678" maxlength="11" />
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 0.55rem; margin-top: 0.5rem;">
+            <button type="button" class="btn btn-secondary" onclick="App.closeModal('txModal')">取消</button>
+            <button type="submit" class="btn btn-primary" style="flex: 1;">💾 儲存入帳</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================= MODAL: ADD ACCOUNT ================= -->
+    <div class="modal-backdrop" id="accountModal">
+      <div class="modal-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+          <h3 style="font-size: 1.05rem; font-weight: 800;">🏦 新增空白資產或負債帳戶</h3>
+          <button class="btn btn-ghost btn-sm" onclick="App.closeModal('accountModal')">✕</button>
+        </div>
+        <form onsubmit="App.saveAccount(event)">
+          <div class="form-group">
+            <label class="form-label">帳戶名稱</label>
+            <input type="text" id="accName" class="form-control" placeholder="例如：泰銖現鈔袋、富邦 J 卡" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">帳戶類型</label>
+            <select id="accType" class="form-control">
+              <option value="bank">🏦 銀行存款帳戶 (資產)</option>
+              <option value="cash">💵 現金 / 外幣現鈔錢包 (資產)</option>
+              <option value="epay">📱 電子票證 / 行動支付 (資產)</option>
+              <option value="investment">📈 證券 / ETF 投資帳戶 (資產)</option>
+              <option value="credit">💳 信用卡帳單 (負債)</option>
+              <option value="loan">🏠 貸款 / 分期負債 (負債)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">初始餘額 (折合 TWD，信用卡待繳填負數)</label>
+            <input type="number" id="accBalance" class="form-control font-mono-num" value="0" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">信用卡額度上限 (選填)</label>
+            <input type="number" id="accLimit" class="form-control font-mono-num" placeholder="如 150000" />
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 0.55rem; margin-top: 0.85rem;">
+            <button type="button" class="btn btn-secondary" onclick="App.closeModal('accountModal')">取消</button>
+            <button type="submit" class="btn btn-primary" style="flex: 1;">儲存帳戶</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================= MODAL: ADD GOAL ================= -->
+    <div class="modal-backdrop" id="goalModal">
+      <div class="modal-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+          <h3 style="font-size: 1.05rem; font-weight: 800;">🎯 新增空白儲蓄目標</h3>
+          <button class="btn btn-ghost btn-sm" onclick="App.closeModal('goalModal')">✕</button>
+        </div>
+        <form onsubmit="App.saveGoal(event)">
+          <div class="form-group">
+            <label class="form-label">目標名稱</label>
+            <input type="text" id="goalName" class="form-control" placeholder="例如：曼谷度假基金、緊急預備金" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">代表圖示</label>
+            <input type="text" id="goalIcon" class="form-control" value="🌟" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">目標總金額 ($)</label>
+            <input type="number" id="goalTarget" class="form-control font-mono-num" placeholder="100000" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">目前已存金額 ($)</label>
+            <input type="number" id="goalCurrent" class="form-control font-mono-num" value="0" required />
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 0.55rem; margin-top: 0.85rem;">
+            <button type="button" class="btn btn-secondary" onclick="App.closeModal('goalModal')">取消</button>
+            <button type="submit" class="btn btn-primary" style="flex: 1;">建立目標</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================= MODAL: ADD PROJECT ================= -->
+    <div class="modal-backdrop" id="projectModal">
+      <div class="modal-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+          <h3 style="font-size: 1.05rem; font-weight: 800;">✈️ 新增空白專案記帳本</h3>
+          <button class="btn btn-ghost btn-sm" onclick="App.closeModal('projectModal')">✕</button>
+        </div>
+        <form onsubmit="App.saveProject(event)">
+          <div class="form-group">
+            <label class="form-label">專案名稱</label>
+            <input type="text" id="projName" class="form-control" placeholder="例如：泰國曼谷芭達雅七日遊" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">專案總預算上限 ($)</label>
+            <input type="number" id="projBudget" class="form-control font-mono-num" placeholder="45000" required />
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 0.55rem; margin-top: 0.85rem;">
+            <button type="button" class="btn btn-secondary" onclick="App.closeModal('projectModal')">取消</button>
+            <button type="submit" class="btn btn-primary" style="flex: 1;">建立專案</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================= MODAL: ADD SUBSCRIPTION ================= -->
+    <div class="modal-backdrop" id="subModal">
+      <div class="modal-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+          <h3 style="font-size: 1.05rem; font-weight: 800;">🔁 新增空白週期訂閱 / 固定扣款</h3>
+          <button class="btn btn-ghost btn-sm" onclick="App.closeModal('subModal')">✕</button>
+        </div>
+        <form onsubmit="App.saveSubscription(event)">
+          <div class="form-group">
+            <label class="form-label">訂閱服務或固定帳單名稱</label>
+            <input type="text" id="subName" class="form-control" placeholder="例如：Netflix、房租、健身房" required />
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem;">
+            <div class="form-group">
+              <label class="form-label">每期金額 ($)</label>
+              <input type="number" id="subAmount" class="form-control font-mono-num" placeholder="390" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">扣款週期</label>
+              <select id="subCycle" class="form-control">
+                <option value="monthly">每月扣款</option>
+                <option value="yearly">每年扣款</option>
+              </select>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem;">
+            <div class="form-group">
+              <label class="form-label">每月幾號扣款</label>
+              <input type="number" id="subDay" class="form-control font-mono-num" min="1" max="31" value="15" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">綁定扣款帳戶</label>
+              <select id="subAccount" class="form-control"></select>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 0.55rem; margin-top: 0.85rem;">
+            <button type="button" class="btn btn-secondary" onclick="App.closeModal('subModal')">取消</button>
+            <button type="submit" class="btn btn-primary" style="flex: 1;">新增訂閱</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
