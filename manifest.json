@@ -1,0 +1,10 @@
+{
+  "name": "OmniLedger Pro 超級記帳王",
+  "short_name": "超級記帳王",
+  "description": "五大頂尖記帳軟體融合版｜支援旅遊外幣、家庭預算、背包客、情侶AA分帳與商務報銷",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b0f19",
+  "theme_color": "#0b0f19",
+  "orientation": "portrait"
+}
